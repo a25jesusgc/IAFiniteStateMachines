@@ -461,13 +461,21 @@ public class Hold : State
     //=========================================================================
     public override void Update()
     {
+        // Se ve ao xogador, cambia a modo persecución
+        if (CanSeePlayer())
+        {
+            nextState = new Pursue(npc, agent, animator, player);
+            stage = EVENT.EXIT;
+        }
+
+        // Se remata o tempo, cambia a modo patrullando
         if (holdTime > 0)
         {
             holdTime -= Time.deltaTime;
         }
         else
         {
-            nextState = new Patrol(npc, agent, animator, player);     // Cambia ao estado patrullando
+            nextState = new Patrol(npc, agent, animator, player);
             stage = EVENT.EXIT;   
         }
     }
