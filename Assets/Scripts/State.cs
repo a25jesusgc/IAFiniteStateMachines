@@ -15,7 +15,8 @@ public class State {
         PURSUE,     // Perseguindo
         ATTACK,     // Atacando
         SLEEP,      // Durmindo
-        RUNAWAY     // Fuxindo
+        RUNAWAY,    // Fuxindo
+        HOLD     // Mantendo posición
     };
 
     // Enumeración dos eventos do ciclo de vida dun estado
@@ -299,10 +300,10 @@ public class Pursue : State
                 nextState = new Attack(npc, agent, animator, player);
                 stage = EVENT.EXIT;
             }
-            // Se perdeu de vista ao xogador, volve a patrullar
+            // Se perdeu de vista ao xogador, mantén a posición antes de volver a patrullar
             else if (!CanSeePlayer())
             {
-                nextState = new Patrol(npc, agent, animator, player);
+                nextState = new Hold(npc, agent, animator, player);
                 stage = EVENT.EXIT;
             }
         }
@@ -426,5 +427,57 @@ public class RunAway : State
     {
         animator.ResetTrigger("isRunning");     // Limpa o trigger da animación de correr
         base.Exit();                        // Chama ao método Exit da clase base
+    }
+}
+
+//=========================================================================
+// Estado HOLD (Manter posición)
+// O NPC mantén a posición durante uns seguns tras perder de vista ao xogador ata comezar a patrullar de novo
+//=========================================================================
+public class Hold : State
+{
+
+    float holdTime;        // Tempo
+
+    public Hold(GameObject _npc, NavMeshAgent _agent, Animator _animator, Transform _player)
+        : base(_npc, _agent, _animator, _player)
+    {
+        name = STATE.HOLD;
+    }
+
+    //=========================================================================
+    // Ao entrar no estado, párase
+    //=========================================================================
+    public override void Enter()
+    {
+        animator.SetTrigger("isIdle");  // Activa o trigger da animación de inactividade
+        agent.isStopped = true;         // Detén o movemento do NPC
+        holdTime = Random.Range(3f, 7f); // Establece o tempo de espera
+        base.Enter();                   // Chama ao método Enter da clase base
+    }
+
+    //=========================================================================
+    // Comproba se paxou suficiente tempo mantendo a posición, e se xa pasou o tempo volve a patrullar
+    //=========================================================================
+    public override void Update()
+    {
+        if (holdTime > 0)
+        {
+            holdTime -= Time.deltaTime;
+        }
+        else
+        {
+            nextState = new Patrol(npc, agent, animator, player);     // Cambia ao estado patrullando
+            stage = EVENT.EXIT;   
+        }
+    }
+
+    //=========================================================================
+    // Ao saír do estado, resetea o trigger da animación
+    //=========================================================================
+    public override void Exit()
+    {
+        animator.ResetTrigger("isIdle");     // Limpa o trigger da animación de inactividade
+        base.Exit();                         // Chama ao método Exit da clase base
     }
 }
